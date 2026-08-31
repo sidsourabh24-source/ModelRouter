@@ -7,4 +7,5 @@ import java.util.Optional;
 @Repository
 public interface ApiKeyRepository extends JpaRepository<ApiKey, String> {
     Optional<ApiKey> findByKeyHashAndStatus(String keyHash, String status);
+    java.util.List<ApiKey> findByOrganizationId(String organizationId);
 }
