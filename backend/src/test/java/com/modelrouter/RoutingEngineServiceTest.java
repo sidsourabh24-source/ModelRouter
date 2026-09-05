@@ -1,11 +1,15 @@
 package com.modelrouter;
 
+import com.modelrouter.classifier.TaskClassificationResult;
+import com.modelrouter.classifier.TaskClassifierService;
 import com.modelrouter.provider.Model;
 import com.modelrouter.provider.ModelProvider;
 import com.modelrouter.provider.ModelRepository;
-import com.modelrouter.routing.InferenceRequest;
+import com.modelrouter.routing.CandidateFilterEngine;
+import com.modelrouter.routing.FallbackExecutionEngine;
 import com.modelrouter.routing.InferenceResponse;
 import com.modelrouter.routing.RoutingEngineService;
+import com.modelrouter.routing.RoutingRequestRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -14,19 +18,25 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 class RoutingEngineServiceTest {
 
     private ModelRepository modelRepository;
+    private RoutingRequestRepository routingRequestRepository;
+    private TaskClassifierService taskClassifierService;
+    private CandidateFilterEngine candidateFilterEngine;
+    private FallbackExecutionEngine fallbackExecutionEngine;
     private RoutingEngineService routingEngineService;
 
     @BeforeEach
     void setUp() {
         modelRepository = Mockito.mock(ModelRepository.class);
-        ModelProvider mockProvider = Mockito.mock(ModelProvider.class);
+        routingRequestRepository = Mockito.mock(RoutingRequestRepository.class);
+        taskClassifierService = Mockito.mock(TaskClassifierService.class);
+        candidateFilterEngine = new CandidateFilterEngine();
 
+        ModelProvider mockProvider = Mockito.mock(ModelProvider.class);
         when(mockProvider.getProviderId()).thenReturn("prov-mock");
         when(mockProvider.getProviderName()).thenReturn("Mock Provider");
         when(mockProvider.isHealthy()).thenReturn(true);
@@ -45,7 +55,15 @@ class RoutingEngineServiceTest {
                                 .build())
                         .build());
 
-        routingEngineService = new RoutingEngineService(modelRepository, List.of(mockProvider));
+        fallbackExecutionEngine = new FallbackExecutionEngine(List.of(mockProvider));
+        routingEngineService = new RoutingEngineService(
+                modelRepository,
+                routingRequestRepository,
+                List.of(mockProvider),
+                taskClassifierService,
+                candidateFilterEngine,
+                fallbackExecutionEngine
+        );
     }
 
     @Test
@@ -73,7 +91,12 @@ class RoutingEngineServiceTest {
                 .build();
 
         List<Model> candidates = List.of(expensiveModel, cheapModel);
-        Model selected = routingEngineService.selectBestModel(candidates, "CHEAP");
+        TaskClassificationResult classification = TaskClassificationResult.builder()
+                .category(TaskClassificationResult.TaskCategory.CHAT)
+                .recommendedCapability("chat")
+                .build();
+
+        Model selected = routingEngineService.selectBestModel(candidates, "CHEAP", classification);
 
         assertEquals("mock-cheap-v1", selected.getName());
     }
@@ -103,7 +126,12 @@ class RoutingEngineServiceTest {
                 .build();
 
         List<Model> candidates = List.of(expensiveModel, cheapModel);
-        Model selected = routingEngineService.selectBestModel(candidates, "QUALITY");
+        TaskClassificationResult classification = TaskClassificationResult.builder()
+                .category(TaskClassificationResult.TaskCategory.REASONING)
+                .recommendedCapability("reasoning")
+                .build();
+
+        Model selected = routingEngineService.selectBestModel(candidates, "QUALITY", classification);
 
         assertEquals("gpt-4o", selected.getName());
     }
