@@ -1,5 +1,6 @@
 package com.modelrouter;
 
+import com.modelrouter.cache.RedisCacheService;
 import com.modelrouter.classifier.TaskClassificationResult;
 import com.modelrouter.classifier.TaskClassifierService;
 import com.modelrouter.provider.Model;
@@ -27,6 +28,7 @@ class RoutingEngineServiceTest {
     private TaskClassifierService taskClassifierService;
     private CandidateFilterEngine candidateFilterEngine;
     private FallbackExecutionEngine fallbackExecutionEngine;
+    private RedisCacheService redisCacheService;
     private RoutingEngineService routingEngineService;
 
     @BeforeEach
@@ -35,6 +37,7 @@ class RoutingEngineServiceTest {
         routingRequestRepository = Mockito.mock(RoutingRequestRepository.class);
         taskClassifierService = Mockito.mock(TaskClassifierService.class);
         candidateFilterEngine = new CandidateFilterEngine();
+        redisCacheService = Mockito.mock(RedisCacheService.class);
 
         ModelProvider mockProvider = Mockito.mock(ModelProvider.class);
         when(mockProvider.getProviderId()).thenReturn("prov-mock");
@@ -59,10 +62,10 @@ class RoutingEngineServiceTest {
         routingEngineService = new RoutingEngineService(
                 modelRepository,
                 routingRequestRepository,
-                List.of(mockProvider),
                 taskClassifierService,
                 candidateFilterEngine,
-                fallbackExecutionEngine
+                fallbackExecutionEngine,
+                redisCacheService
         );
     }
 

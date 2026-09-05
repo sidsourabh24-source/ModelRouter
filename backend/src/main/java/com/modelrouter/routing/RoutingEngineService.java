@@ -1,5 +1,6 @@
 package com.modelrouter.routing;
 
+import com.modelrouter.cache.RedisCacheService;
 import com.modelrouter.classifier.TaskClassificationResult;
 import com.modelrouter.classifier.TaskClassifierService;
 import com.modelrouter.provider.Model;
@@ -19,8 +20,15 @@ public class RoutingEngineService {
     private final TaskClassifierService taskClassifierService;
     private final CandidateFilterEngine candidateFilterEngine;
     private final FallbackExecutionEngine fallbackExecutionEngine;
+    private final RedisCacheService redisCacheService;
 
     public InferenceResponse routeAndExecute(InferenceRequest request) {
+        // 0. Check Redis Cache Hit (Day 16)
+        InferenceResponse cachedResponse = redisCacheService != null ? redisCacheService.getCachedResponse(request) : null;
+        if (cachedResponse != null) {
+            return cachedResponse;
+        }
+
         // 1. Task & Complexity Classification (Day 11)
         TaskClassificationResult classification = taskClassifierService.classify(request);
 
@@ -56,6 +64,7 @@ public class RoutingEngineService {
 
         // 4. Fallback Execution (Day 14)
         InferenceResponse response = fallbackExecutionEngine.executeWithFallback(rankedCandidates, request);
+        response.setCacheHit(false);
 
         // 5. Decision Trace & Explainability (Day 15)
         List<InferenceResponse.CandidateEvaluation> evaluations = rankedCandidates.stream()
@@ -81,7 +90,12 @@ public class RoutingEngineService {
                 .evaluatedCandidates(evaluations)
                 .build());
 
-        // 6. Telemetry Persistence
+        // 6. Cache Fresh Response in Redis (Day 16)
+        if (redisCacheService != null) {
+            redisCacheService.putResponseInCache(request, response);
+        }
+
+        // 7. Telemetry Persistence
         try {
             RoutingRequest telemetry = RoutingRequest.builder()
                     .id("req-" + UUID.randomUUID().toString().substring(0, 8))
