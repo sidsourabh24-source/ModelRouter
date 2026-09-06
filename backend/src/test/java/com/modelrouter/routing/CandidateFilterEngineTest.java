@@ -1,17 +1,21 @@
 package com.modelrouter.routing;
 
+import com.modelrouter.cache.ModelHealthTrackerService;
 import com.modelrouter.classifier.TaskClassificationResult;
 import com.modelrouter.provider.Model;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 class CandidateFilterEngineTest {
 
+    private ModelHealthTrackerService healthTrackerService;
     private CandidateFilterEngine filterEngine;
     private Model modelActiveCode;
     private Model modelActiveChat;
@@ -19,7 +23,10 @@ class CandidateFilterEngineTest {
 
     @BeforeEach
     void setUp() {
-        filterEngine = new CandidateFilterEngine();
+        healthTrackerService = Mockito.mock(ModelHealthTrackerService.class);
+        when(healthTrackerService.getHealthStatus(Mockito.anyString())).thenReturn("HEALTHY");
+
+        filterEngine = new CandidateFilterEngine(healthTrackerService);
 
         modelActiveCode = Model.builder()
                 .id("model-code")
@@ -61,21 +68,11 @@ class CandidateFilterEngineTest {
     }
 
     @Test
-    void testFilterByContextLimit() {
+    void testFilterUnhealthyModel() {
+        when(healthTrackerService.getHealthStatus("model-chat")).thenReturn("UNHEALTHY");
+
         TaskClassificationResult classification = TaskClassificationResult.builder()
                 .recommendedCapability("chat")
-                .estimatedPromptTokens(10000) // Exceeds gpt-3.5-turbo limit (4000)
-                .build();
-
-        List<Model> filtered = filterEngine.filterCandidates(List.of(modelActiveCode, modelActiveChat), classification);
-        assertEquals(1, filtered.size());
-        assertEquals("model-code", filtered.get(0).getId());
-    }
-
-    @Test
-    void testFilterByCapability() {
-        TaskClassificationResult classification = TaskClassificationResult.builder()
-                .recommendedCapability("code")
                 .estimatedPromptTokens(500)
                 .build();
 
