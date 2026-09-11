@@ -89,7 +89,7 @@ export default function RequestsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const fetchLiveRequests = () => {
-    fetch("http://localhost:8080/api/v1/admin/analytics/requests")
+    fetch("/api/admin/analytics/requests")
       .then((res) => res.json())
       .then((data: any[]) => {
         if (Array.isArray(data) && data.length > 0) {

@@ -41,15 +41,15 @@ export default function OverviewPage() {
 
   useEffect(() => {
     const fetchOverview = () => {
-      fetch("http://localhost:8080/api/v1/admin/analytics/overview")
+      fetch("/api/admin/analytics/overview")
         .then((res) => res.json())
         .then((json) => {
-          if (json.totalRequests !== undefined) {
+          if (json && json.totalRequests !== undefined) {
             setData(json);
           }
         })
         .catch(() => {
-          // Fallback to initial state if backend is offline
+          // Keep resilient state
         });
     };
 
