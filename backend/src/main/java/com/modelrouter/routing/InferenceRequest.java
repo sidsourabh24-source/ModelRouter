@@ -17,6 +17,7 @@ public class InferenceRequest {
     @Builder.Default
     private String mode = "BALANCED";
 
+    private String organizationId;
     private Integer maxTokens;
     private Double temperature;
 

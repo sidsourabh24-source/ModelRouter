@@ -31,6 +31,13 @@ public class ApiKey {
     @Column(name = "last_used_at")
     private ZonedDateTime lastUsedAt;
 
-    @Column(name = "created_at", insertable = false, updatable = false)
+    @Column(name = "created_at", updatable = false)
     private ZonedDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = ZonedDateTime.now();
+        }
+    }
 }

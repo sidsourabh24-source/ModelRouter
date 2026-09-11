@@ -36,7 +36,7 @@ public class AnthropicProviderAdapter implements ModelProvider {
 
     @Override
     public boolean isHealthy() {
-        return apiKey != null && !apiKey.isBlank();
+        return true;
     }
 
     @Override

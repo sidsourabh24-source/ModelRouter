@@ -64,11 +64,10 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- H2 Database for Testing -->
+        <!-- H2 Database for In-Memory Local Dev & Testing -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <!-- Lombok -->

@@ -52,12 +52,19 @@ public class RoutingEngineService {
         }
 
         List<Model> candidates = candidateFilterEngine.filterCandidates(allModels, classification);
+        if (candidates == null || candidates.isEmpty()) {
+            candidates = allModels;
+        }
 
         // 3. Multi-Objective Ranked Model Selection (Day 13)
         String mode = request.getMode() != null ? request.getMode().toUpperCase() : "BALANCED";
         List<Model> rankedCandidates = candidates.stream()
                 .sorted(Comparator.comparingDouble((Model m) -> calculateScore(m, mode, classification)).reversed())
                 .collect(Collectors.toList());
+
+        if (rankedCandidates.isEmpty()) {
+            rankedCandidates = allModels;
+        }
 
         Model primaryModel = rankedCandidates.get(0);
         double topScore = calculateScore(primaryModel, mode, classification);

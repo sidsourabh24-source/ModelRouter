@@ -9,4 +9,5 @@ public class ModelRouterApplication {
     public static void main(String[] args) {
         SpringApplication.run(ModelRouterApplication.class, args);
     }
+    
 }

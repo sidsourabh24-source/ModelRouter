@@ -51,6 +51,13 @@ public class RoutingRequest {
     @Column(columnDefinition = "TEXT")
     private String reason;
 
-    @Column(name = "created_at", insertable = false, updatable = false)
+    @Column(name = "created_at", updatable = false)
     private ZonedDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = ZonedDateTime.now();
+        }
+    }
 }
