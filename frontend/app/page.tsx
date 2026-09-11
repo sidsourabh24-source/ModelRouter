@@ -40,16 +40,22 @@ export default function OverviewPage() {
   });
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/v1/admin/analytics/overview")
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.totalRequests !== undefined) {
-          setData(json);
-        }
-      })
-      .catch(() => {
-        // Fallback to initial mock state if backend is offline
-      });
+    const fetchOverview = () => {
+      fetch("http://localhost:8080/api/v1/admin/analytics/overview")
+        .then((res) => res.json())
+        .then((json) => {
+          if (json.totalRequests !== undefined) {
+            setData(json);
+          }
+        })
+        .catch(() => {
+          // Fallback to initial state if backend is offline
+        });
+    };
+
+    fetchOverview();
+    const interval = setInterval(fetchOverview, 2000);
+    return () => clearInterval(interval);
   }, []);
 
   return (

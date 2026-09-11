@@ -84,8 +84,53 @@ const mockRequestLogs: RequestLog[] = [
 ];
 
 export default function RequestsPage() {
-  const [logs] = useState<RequestLog[]>(mockRequestLogs);
+  const [logs, setLogs] = useState<RequestLog[]>(mockRequestLogs);
   const [selectedLog, setSelectedLog] = useState<RequestLog | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const fetchLiveRequests = () => {
+    fetch("http://localhost:8080/api/v1/admin/analytics/requests")
+      .then((res) => res.json())
+      .then((data: any[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const formatted: RequestLog[] = data.map((r: any) => ({
+            id: r.id || r.requestId || Math.random().toString(),
+            requestId: r.requestId || r.id || "req-unknown",
+            mode: r.mode || "BALANCED",
+            taskCategory: r.taskCategory || (r.reason && r.reason.includes("CODE") ? "CODE" : r.reason && r.reason.includes("REASONING") ? "REASONING" : r.reason && r.reason.includes("WRITING") ? "WRITING" : "CHAT"),
+            complexityScore: r.complexityScore || 0.25,
+            selectedModel: r.selectedModelId ? r.selectedModelId.replace("model-", "") : "mock-cheap-v1",
+            provider: r.selectedModelId && r.selectedModelId.includes("gpt") ? "OpenAI" : r.selectedModelId && r.selectedModelId.includes("claude") ? "Anthropic" : "Mock Provider",
+            latencyMs: r.latencyMs || 45,
+            inputTokens: r.inputTokens || 12,
+            outputTokens: r.outputTokens || 100,
+            estimatedCostUsd: r.estimatedCost || 0.0001,
+            cacheHit: Boolean(r.cacheHit),
+            status: (r.status as "SUCCESS" | "FAILED") || "SUCCESS",
+            reason: r.reason || `Processed request in mode ${r.mode || "BALANCED"}.`,
+            evaluatedCandidates: [
+              { name: r.selectedModelId ? r.selectedModelId.replace("model-", "") : "mock-cheap-v1", score: 0.95 },
+              { name: "gpt-4o", score: 0.88 },
+              { name: "claude-3-5-sonnet", score: 0.82 },
+            ],
+          })).reverse();
+          setLogs(formatted);
+        }
+      })
+      .catch(() => {});
+  };
+
+  React.useEffect(() => {
+    fetchLiveRequests();
+    const interval = setInterval(fetchLiveRequests, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const filteredLogs = logs.filter((l) =>
+    l.requestId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    l.selectedModel.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    l.mode.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="space-y-8">
@@ -108,7 +153,9 @@ export default function RequestsPage() {
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
             <input
               type="text"
-              placeholder="Search request ID..."
+              placeholder="Search request ID or model..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-surface border border-border rounded-xl pl-9 pr-4 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
             />
           </div>
@@ -128,7 +175,7 @@ export default function RequestsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50 text-slate-300">
-              {logs.map((log) => (
+              {filteredLogs.map((log) => (
                 <tr key={log.id} className="hover:bg-slate-800/30 transition-colors">
                   <td className="px-6 py-4">
                     <div className="font-mono text-xs text-white font-semibold flex items-center gap-2">

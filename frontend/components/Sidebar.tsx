@@ -3,10 +3,11 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Cpu, Sliders, ListTree, Settings } from "lucide-react";
+import { LayoutDashboard, Cpu, Sliders, ListTree, Play, Settings } from "lucide-react";
 
 const navItems = [
   { name: "Overview", href: "/", icon: LayoutDashboard },
+  { name: "Live Playground", href: "/playground", icon: Play },
   { name: "Models & Providers", href: "/models", icon: Cpu },
   { name: "Routing Policies", href: "/policies", icon: Sliders },
   { name: "Request Explorer", href: "/requests", icon: ListTree },
